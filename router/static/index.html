@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kestrel Request Router</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<style>
+:root{--paper:#f5f3ee;--card:#fffdf9;--ink:#1d1b18;--ink-2:#55504a;--ink-3:#8a847c;--rule:#ddd6ca;--rule-2:#ebe6dc;
+--accent:#a8481f;--on-accent:#ffffff;--accent-soft:#f3e3d9;--go:#1f6b4f;--go-soft:#e2efe8;--ask:#9a6a10;--ask-soft:#f6ecd2;--bar:#e6e0d4;
+--serif:"Source Serif 4",Georgia,serif;--sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;--mono:"IBM Plex Mono",Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#161513;--card:#1e1c1a;--ink:#ece8e1;--ink-2:#bdb6ab;
+--ink-3:#8c867c;--rule:#38342f;--rule-2:#2a2724;--accent:#e08458;--on-accent:#1a1210;--accent-soft:#3a2418;--go:#6cc29c;--go-soft:#17302a;
+--ask:#e2b24f;--ask-soft:#352a12;--bar:#2f2b27}}
+:root[data-theme="dark"]{--paper:#161513;--card:#1e1c1a;--ink:#ece8e1;--ink-2:#bdb6ab;--ink-3:#8c867c;--rule:#38342f;
+--rule-2:#2a2724;--accent:#e08458;--on-accent:#1a1210;--accent-soft:#3a2418;--go:#6cc29c;--go-soft:#17302a;--ask:#e2b24f;--ask-soft:#352a12;--bar:#2f2b27}
+*{box-sizing:border-box}html,body{background:var(--paper)}
+body{margin:0;color:var(--ink);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+header{border-bottom:1px solid var(--rule);background:var(--card)}
+.bar-in{max-width:1180px;margin:0 auto;padding:14px 24px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.brand{font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:12.5px}
+.brand span{color:var(--accent)}
+.sub{color:var(--ink-3);font-size:13px}
+.status{margin-left:auto;font:12px var(--mono);color:var(--ink-3)}
+main{max-width:1180px;margin:0 auto;padding:28px 24px 64px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:22px}
+h2{font:600 12px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+label{display:block;font-size:12.5px;font-weight:500;color:var(--ink-2);margin:14px 0 6px}
+textarea,select,input{width:100%;font:15px/1.45 var(--sans);color:var(--ink);background:var(--paper);border:1px solid var(--rule);
+border-radius:7px;padding:10px 12px}
+textarea{min-height:120px;resize:vertical}
+textarea:focus,select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.row .wide{grid-column:1/-1}
+.examples{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.ex{font:13px var(--sans);color:var(--ink-2);background:transparent;border:1px solid var(--rule);border-radius:999px;padding:5px 12px;cursor:pointer}
+.ex:hover{border-color:var(--accent);color:var(--accent)}
+.go{margin-top:20px;width:100%;font:600 15px var(--sans);color:var(--on-accent);background:var(--accent);border:0;border-radius:7px;padding:12px;cursor:pointer}
+.go:disabled{opacity:.6;cursor:wait}
+.hint{font-size:12.5px;color:var(--ink-3);margin-top:10px}
+.empty{color:var(--ink-3);padding:40px 6px;text-align:center}
+.verdict{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{font:600 11.5px var(--sans);letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:999px}
+.pill.route{background:var(--go-soft);color:var(--go)}.pill.ask{background:var(--ask-soft);color:var(--ask)}
+.team{font:600 34px/1.15 var(--serif);margin:12px 0 4px}
+.team small{display:block;font:400 13.5px var(--sans);color:var(--ink-3);margin-top:6px}
+.meter{display:flex;align-items:center;gap:12px;margin:14px 0 4px}
+.meter .track{flex:1;height:8px;background:var(--bar);border-radius:999px;overflow:hidden}
+.meter .fill{height:100%;background:var(--go);border-radius:999px;transition:width .3s}
+.meter .fill.low{background:var(--ask)}
+.meter b{font:500 14px var(--mono);min-width:46px;text-align:right}
+.threshold{font-size:12px;color:var(--ink-3)}
+.ask-box{margin-top:18px;background:var(--ask-soft);border-radius:8px;padding:14px 16px}
+.ask-box p{margin:0 0 8px;font:16px/1.5 var(--serif)}
+.ask-box .src{font-size:12px;color:var(--ink-2);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.copy{font:500 12px var(--sans);border:1px solid var(--rule);background:var(--card);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer}
+ol.reasons{margin:20px 0 0;padding:0;list-style:none;counter-reset:r;border-top:1px solid var(--rule-2)}
+ol.reasons li{position:relative;padding:11px 0 11px 30px;border-bottom:1px solid var(--rule-2);color:var(--ink)}
+ol.reasons li::before{counter-increment:r;content:counter(r);position:absolute;left:0;top:11px;width:20px;height:20px;border-radius:50%;
+background:var(--accent-soft);color:var(--accent);font:600 11.5px/20px var(--sans);text-align:center}
+.foot{margin-top:16px;font:12px var(--mono);color:var(--ink-3);display:flex;gap:16px;flex-wrap:wrap}
+.error{color:var(--accent);background:var(--accent-soft);border-radius:8px;padding:12px 14px}
+@media (max-width:860px){main{grid-template-columns:1fr;padding:18px 16px 48px}.row{grid-template-columns:1fr}.status{margin-left:0;width:100%}}
+</style>
+</head>
+<body>
+<header><div class="bar-in">
+  <div class="brand">Kestrel <span>·</span> Request router</div>
+  <div class="sub">Sends a new service request to the right team, and says why.</div>
+  <div class="status" id="status">checking service…</div>
+</div></header>
+
+<main>
+  <section class="panel" aria-labelledby="in-h">
+    <h2 id="in-h">New request</h2>
+    <label for="text">What the customer wrote or said</label>
+    <textarea id="text" placeholder="e.g. water purifier not turning on, paid on upi last month"></textarea>
+    <div class="row">
+      <div class="wide"><label for="product">Product</label>
+        <select id="product"><option value="">Not known</option><option>Water Purifier</option><option>Air Fryer</option>
+          <option>Mixer Grinder</option><option>Induction Cooktop</option><option>Room Heater</option><option>Ceiling Fan</option>
+          <option>Robot Vacuum</option></select></div>
+      <div><label for="warranty">Warranty</label>
+        <select id="warranty"><option value="">Not known</option><option value="in_warranty">In warranty</option>
+          <option value="shield">Kestrel Shield</option><option value="out_of_warranty">Out of warranty</option></select></div>
+      <div><label for="channel">Channel</label>
+        <select id="channel"><option value="">Not known</option><option value="chat">Chat</option><option value="whatsapp">WhatsApp</option>
+          <option value="ivr">IVR</option><option value="email">Email</option></select></div>
+    </div>
+    <label>Try an example</label>
+    <div class="examples" id="examples"></div>
+    <button class="go" id="go">Route this request</button>
+    <div class="hint">Ctrl + Enter also works. Nothing you type is stored.</div>
+  </section>
+
+  <section class="panel" aria-live="polite" id="out">
+    <h2>Routing</h2>
+    <div class="empty">The team, how sure the router is, and the reasons will show here.</div>
+  </section>
+</main>
+
+<script>
+const EXAMPLES = [
+  {label: "Paid, but it's a fault", text: "sir mixer grinder making loud noise paid on upi pls call back", product: "Mixer Grinder", warranty: "in_warranty", channel: "chat"},
+  {label: "Purifier breakdown", text: "hi, water purifier not turning on since yesterday", product: "Water Purifier", warranty: "in_warranty", channel: "whatsapp"},
+  {label: "Too vague", text: "please call back regarding my cooktop", product: "Induction Cooktop", warranty: "out_of_warranty", channel: "ivr"},
+  {label: "Real billing issue", text: "charged twice for my air fryer order, need refund of the extra amount", product: "Air Fryer", warranty: "in_warranty", channel: "email"},
+  {label: "Install, already paid", text: "want to reschedule installation of water purifier i paid extra for this", product: "Water Purifier", warranty: "shield", channel: "chat"},
+];
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let THRESHOLD = 0.6;
+
+EXAMPLES.forEach(e => {
+  const b = document.createElement("button"); b.className = "ex"; b.type = "button"; b.textContent = e.label;
+  b.onclick = () => { $("text").value = e.text; $("product").value = e.product; $("warranty").value = e.warranty; $("channel").value = e.channel; send(); };
+  $("examples").appendChild(b);
+});
+
+fetch("/api/health").then(r => r.json()).then(h => {
+  if (h.ready) {
+    THRESHOLD = h.ask_below ?? THRESHOLD;
+    $("status").textContent = `model ${h.model?.version ?? ""} · trained on ${h.model?.trained_on?.toLocaleString() ?? "?"} requests · questions: ${h.question_writer}`;
+  } else { $("status").textContent = "not ready: " + (h.error || "model not loaded"); }
+}).catch(() => { $("status").textContent = "service not reachable"; });
+
+async function send() {
+  const text = $("text").value.trim();
+  if (!text) { $("text").focus(); return; }
+  const body = {request_text: text};
+  if ($("product").value) body.product_family = $("product").value;
+  if ($("warranty").value) body.warranty_status = $("warranty").value;
+  if ($("channel").value) body.channel = $("channel").value;
+  $("go").disabled = true; $("go").textContent = "Routing…";
+  try {
+    const r = await fetch("/api/route", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+    const data = await r.json();
+    if (!r.ok) throw new Error(typeof data.detail === "string" ? data.detail : "The request was not accepted. Check the fields and try again.");
+    render(data);
+  } catch (e) {
+    $("out").innerHTML = `<h2>Routing</h2><div class="error">${esc(e.message || "Something went wrong.")}</div>`;
+  } finally { $("go").disabled = false; $("go").textContent = "Route this request"; }
+}
+
+function render(d) {
+  const ask = d.action === "ask_first";
+  const pct = Math.round(d.confidence * 100);
+  const q = d.ask_customer;
+  $("out").innerHTML = `
+    <h2>Routing</h2>
+    <div class="verdict"><span class="pill ${ask ? "ask" : "route"}">${ask ? "Ask first" : "Route now"}</span></div>
+    <div class="team">${esc(d.team)}<small>${ask ? "Best guess only. Ask the customer before routing." : "Send it to this team."}</small></div>
+    <div class="meter"><div class="track"><div class="fill ${ask ? "low" : ""}" style="width:${pct}%"></div></div><b>${pct}%</b></div>
+    <div class="threshold">Routes automatically at ${Math.round(THRESHOLD * 100)}% or more.</div>
+    ${q ? `<div class="ask-box"><p id="q">${esc(q.question)}</p>
+      <div class="src"><span>${esc(q.source)}</span><button class="copy" type="button" onclick="navigator.clipboard.writeText(document.getElementById('q').textContent);this.textContent='Copied'">Copy</button></div></div>` : ""}
+    <ol class="reasons">${d.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ol>
+    <div class="foot"><span>model ${esc(d.model_version || "")}</span><span>${d.request_id ? "request " + esc(d.request_id) : ""}</span></div>`;
+}
+
+// ?example=1..5 opens the screen with that example already routed (handy for demos)
+const ex = Number(new URLSearchParams(location.search).get("example"));
+if (ex >= 1 && ex <= EXAMPLES.length) document.querySelectorAll(".ex")[ex - 1].click();
+
+$("go").onclick = send;
+$("text").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send(); });
+</script>
+</body>
+</html>

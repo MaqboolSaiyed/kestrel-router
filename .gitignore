@@ -1,0 +1,15 @@
+# client data from the pack: copy the CSVs here locally, they are not part of the repo
+data/*
+!data/.gitkeep
+
+# python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# local settings and secrets
+.env
+.vscode/
+.idea/
